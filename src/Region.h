@@ -39,16 +39,15 @@ struct Region {
 		{
 			for (uintptr_t i = section.start; i < section.end; i++)
 			{
-				bool matched = true;
-
-				for (size_t j = 0; j < match.size(); j++)
+				for (size_t j = 0; j < match.size() && i + j < section.end; j++)
 				{
 					if (*(char*) i + j != match[j])
-						matched = false;
+						goto CONTINUE;
 				}
 
-				if (matched)
-					matches.push_back(i);
+				matches.push_back(i);
+			CONTINUE:
+				continue;
 			}
 		}
 
@@ -58,5 +57,16 @@ struct Region {
 	inline void merge(Region& region)
 	{
 		this->sections.insert(this->sections.end(), region.sections.begin(), region.sections.end());
+	}
+
+	inline bool contains(uintptr_t address)
+	{
+		for (auto& section: this->sections)
+		{
+			if (section.start < address && address < section.end)
+				return true;
+		}
+
+		return false;
 	}
 };
