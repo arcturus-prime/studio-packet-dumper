@@ -1,35 +1,38 @@
 #pragma once
 
+#include "Context.h"
+#include "Region.h"
 #include "Types.h"
-#include "Utility.h"
 
+#include <cstdint>
+#include <iostream>
 #include <windows.h>
 
-static inline void* VFTable_hook(void** vftablePtr, int position, void* func)
+namespace VFTable
 {
-	int oldSetting;
-	VirtualProtect(vftablePtr, position * sizeof(void*), PAGE_READWRITE, (PDWORD) &oldSetting);
+	static inline void** find(Region& region, const std::string& match)
+	{
+		auto results = region.find(match);
+		auto base = region.base();
 
-	void* oldFunc = vftablePtr[position];
-	vftablePtr[position] = func;
+		for (auto result: results)
+		{
+			unsigned int ibo_type_descriptor = result - base - 0x10;
 
-	VirtualProtect(vftablePtr, position * sizeof(void*), oldSetting, (PDWORD) &oldSetting);
+			auto xref_ibos = region.find(std::string((char*) &ibo_type_descriptor, 4));
 
-	return oldFunc;
-}
+			for (auto xref_ibo: xref_ibos)
+			{
+				uintptr_t completeObjLoc = xref_ibo - 0xC;
+				auto vftable = region.find(std::string((char*) &completeObjLoc, 8));
 
-static inline void** VFTable_find(void* base, const char* mangled_name, size_t size)
-{
-	char* result = Utility_findInImage(base, mangled_name, size);
-	if (result == NULL)
+				if (vftable.empty())
+					return NULL;
+
+				return (void**) vftable[0];
+			}
+		}
+
 		return NULL;
-
-	unsigned int ibo_type_descriptor = (uintptr_t) result - (uintptr_t) base - 0x10;
-
-	char* completeObjLoc =
-		Utility_findInImage(base, (char*) &ibo_type_descriptor, 4) - 0xC;
-
-	char* vftable = Utility_findInImage(base, (char*) &completeObjLoc, 8) + 8;
-
-	return (void**) vftable;
-}
+	}
+} // namespace VFTable

@@ -1,17 +1,21 @@
+#include "Context.h"
+#include "Region.h"
 #include "Types.h"
 #include "VFTable.h"
 
-#include <stdio.h>
+#include <iostream>
 #include <stdlib.h>
 #include <windows.h>
+#include <winnt.h>
 
 typedef void (*ReceiveFunc)(void*, char);
 
-ReceiveFunc original_Receive;
+Context ctx;
+size_t funcIndex;
+
+void** vftable = nullptr;
 
 CRITICAL_SECTION ReceiveLock;
-
-void** vftable;
 
 void Receive(RakNet_RakPeer* rakPeer, char _)
 {
@@ -27,45 +31,45 @@ void Receive(RakNet_RakPeer* rakPeer, char _)
 
 			for (int j = 0; j < packet->size; j++)
 			{
-				printf("%02x ", packet->data[j]);
+				std::cout << std::hex << packet->data[j] << " ";
 			}
 
-			printf("\n\n");
+			std::cout << "\n\n";
 		}
 	}
 
 	LeaveCriticalSection(&ReceiveLock);
 
-	return original_Receive(rakPeer, _);
+	(*(ReceiveFunc*) (ctx.hooks[funcIndex].previous.data()))(rakPeer, _);
 }
 
 BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved)
 {
-
 	switch (fdwReason)
 	{
 		case DLL_PROCESS_ATTACH:
-
+		{
 			InitializeCriticalSection(&ReceiveLock);
 
 			AllocConsole();
 			freopen_s((FILE**) stdout, "CONOUT$", "w", stdout);
 
-			vftable = VFTable_find(GetModuleHandle(NULL), ".?AVRakPeer@RakNet@@", 20);
-			if (vftable == NULL)
+			auto region = Region::fromModule(GetModuleHandle(NULL));
+			vftable = VFTable::find(region, ".?AVRakPeer@RakNet@@");
+
+			if (vftable == nullptr)
 			{
-				printf("Unable to locate VFTable address!\n");
+				std::cout << "Unable to locate VFTable address!\n";
 				return FALSE;
 			};
 
-			original_Receive = (ReceiveFunc) VFTable_hook(vftable, 23, (void*) &Receive);
-			break;
+			void* func = (void*) &Receive;
+			funcIndex = ctx.hook((uintptr_t) vftable + 23, (char*) &func, 8);
+		}
+		break;
 
 		case DLL_PROCESS_DETACH:
-			if (vftable == NULL)
-				return TRUE;
-
-			VFTable_hook(vftable, 23, (void*) original_Receive);
+			ctx.unhook(funcIndex);
 			break;
 	}
 
