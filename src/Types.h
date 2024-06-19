@@ -1,23 +1,23 @@
 #pragma once
 
-typedef struct RakNet_Packet {
-	unsigned char unknown1[0x30];
-	unsigned int size;
-	unsigned int bitSize;
-	unsigned char* data;
+namespace RakNet {
+	struct Packet {
+		unsigned char unknown1[0x30];
+		unsigned int size;
+		unsigned int bitSize;
+		unsigned char* data;
+	};
 
-} RakNet_Packet;
+	struct PacketQueue {
+		Packet** array;
+		unsigned int head;
+		unsigned int tail;
+		unsigned int allocSize;
+	};
 
-typedef struct RakNet_PacketQueue {
-	RakNet_Packet** array;
-	unsigned int head;
-	unsigned int tail;
-	unsigned int allocSize;
+	struct RakPeer {
+		char unknown1[0x8f0];
+		PacketQueue queue;
+	};
 
-} RakNet_PacketQueue;
-
-typedef struct RakNet_RakPeer {
-	char unknown1[0x8f0];
-	RakNet_PacketQueue queue;
-
-} RakNet_RakPeer;
+} // namespace RakNet

@@ -1,9 +1,6 @@
 #pragma once
 
-#include "Types.h"
-
 #include <cstdint>
-#include <iostream>
 #include <string>
 #include <vector>
 #include <windows.h>
@@ -16,8 +13,7 @@ struct Section {
 struct Region {
 	std::vector<Section> sections;
 
-	static inline Region fromModule(const void* base)
-	{
+	static inline Region from_module(const void* base) {
 		Region region;
 
 		IMAGE_DOS_HEADER* dos = (IMAGE_DOS_HEADER*) base;
@@ -37,8 +33,7 @@ struct Region {
 		return region;
 	}
 
-	inline std::vector<uintptr_t> find(const std::string& match) const
-	{
+	inline std::vector<uintptr_t> find(const std::string& match) const {
 		std::vector<uintptr_t> matches;
 
 		for (auto& section: this->sections)
@@ -53,13 +48,7 @@ struct Region {
 		return matches;
 	}
 
-	inline void merge(Region& region)
-	{
-		this->sections.insert(this->sections.end(), region.sections.begin(), region.sections.end());
-	}
-
-	inline bool contains(const uintptr_t address) const
-	{
+	inline bool contains(const uintptr_t address) const {
 		for (auto& section: this->sections)
 		{
 			if (section.start < address && address < section.end)
@@ -69,8 +58,7 @@ struct Region {
 		return false;
 	}
 
-	inline uintptr_t base() const
-	{
+	inline uintptr_t base() const {
 		if (this->sections.empty())
 			return 0;
 
@@ -87,8 +75,7 @@ struct Region {
 private:
 	Region() = default;
 
-	static inline bool compare(const char* data1, const char* data2, const size_t size)
-	{
+	static inline bool compare(const char* data1, const char* data2, const size_t size) {
 		for (size_t i = 0; i < size; i++)
 		{
 			if (data1[i] != data2[i])

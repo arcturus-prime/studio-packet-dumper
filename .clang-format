@@ -18,11 +18,11 @@ BinPackArguments: false
 BinPackParameters: false
 BraceWrapping:
   AfterCaseLabel: true
-  AfterClass: true
+  AfterClass: false
   AfterControlStatement: Always
-  AfterEnum: true
-  AfterFunction: true
-  AfterNamespace: true
+  AfterEnum: false
+  AfterFunction: false
+  AfterNamespace: false
   BeforeCatch: false
   BeforeElse: false
   BeforeWhile: false
