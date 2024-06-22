@@ -2,8 +2,10 @@
 This project is meant to display all networking data sent through the local connection between the self-hosted server and client when using the Test mode in Roblox Studio
 
 ### Building
-There are currently no custom build options and building can be done as normal with CMake and MSVC. Running the following in a created `/build` directory within the project root folder should suffice:
+There are currently no custom build options and building can be done as normal with CMake and MSVC. Running the following in the root project directory should suffice:
 ```
+mkdir build
+cd build
 cmake ..
 cmake --build . --config Release
 ```
