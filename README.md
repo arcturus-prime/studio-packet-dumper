@@ -5,11 +5,12 @@ This project is meant to display all networking data sent through the local conn
 There are currently no custom build options and building can be done as normal with CMake and MSVC. Running the following in a created `/build` directory within the project root folder should suffice:
 ```
 cmake ..
-cmake --build .
+cmake --build . --config Release
 ```
+
 Clang and Ninja should also work without any additional setup (assuming CMake is able to locate them)
 ```
-cmake .. -G "Ninja"
+cmake .. -G "Ninja" -DCMAKE_BUILD_TYPE=Release
 cmake --build . 
 ```
 
