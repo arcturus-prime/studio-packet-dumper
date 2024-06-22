@@ -7,13 +7,15 @@
 #include <string>
 #include <windows.h>
 
-namespace VFTable {
-	struct Context {
+namespace StudioDumper {
+	class VFTable {
 		std::vector<uintptr_t> hooks;
-
 		void** vftable;
 
-		static inline std::optional<Context> find(Region& region, const std::string& mangled_name) {
+	public:
+		VFTable() = default;
+
+		static inline std::optional<VFTable> find(const Region& region, const std::string& mangled_name) {
 			auto results = region.find(mangled_name);
 			auto base = region.base();
 
@@ -31,41 +33,68 @@ namespace VFTable {
 					if (vftable.empty())
 						return std::nullopt;
 
-					size_t i = 0;
-					while (region.contains(*((uintptr_t*) vftable[0] + i + 1))) i++;
+					auto vftable_void = (void**) vftable[0] + 1;
 
-					return Context{std::vector<uintptr_t>(i), (void**) vftable[0] + 1};
-				}
+					size_t i = 0;
+					while (region.contains((uintptr_t) vftable_void[i])) i++;
+
+					VFTable ctx;
+
+					ctx.hooks = std::vector<uintptr_t>(i);
+					ctx.vftable = vftable_void;
+
+					return ctx;
+				};
 			}
 
 			return std::nullopt;
 		}
 
-		inline void hook(size_t position, void* function) {
+		inline void hook(size_t position, uintptr_t function) {
+			if (position >= this->hooks.size())
+				return;
+
 			DWORD oldSetting;
 			VirtualProtect((void*) (vftable + position), 8, PAGE_READWRITE, (PDWORD) &oldSetting);
 
 			this->hooks[position] = (uintptr_t) * (vftable + position);
-			*(vftable + position) = function;
+			*(vftable + position) = (void*) function;
 
 			VirtualProtect((void*) (vftable + position), 8, oldSetting, (PDWORD) &oldSetting);
 		}
 
-		inline void unhook(size_t index) {
+		inline void unhook(size_t position) {
+			if (position >= this->hooks.size())
+				return;
+
 			DWORD oldSetting;
-			VirtualProtect((void*) (vftable + index), 8, PAGE_READWRITE, (PDWORD) &oldSetting);
+			VirtualProtect((void*) (vftable + position), 8, PAGE_READWRITE, (PDWORD) &oldSetting);
 
-			*(vftable + index) = (void*) this->hooks[index];
+			*(vftable + position) = (void*) this->hooks[position];
 
-			VirtualProtect((void*) (vftable + index), 8, oldSetting, (PDWORD) &oldSetting);
+			VirtualProtect((void*) (vftable + position), 8, oldSetting, (PDWORD) &oldSetting);
 		}
 
 		inline uintptr_t get_current(size_t position) {
+			if (position >= this->hooks.size())
+				return 0;
+
 			return *(uintptr_t*) (vftable + position);
 		}
 
 		inline uintptr_t get_previous(size_t position) {
+			if (position >= this->hooks.size())
+				return 0;
+
 			return this->hooks[position];
 		}
+
+		inline uintptr_t get_address() {
+			return (uintptr_t) this->vftable;
+		}
+
+		inline size_t get_size() {
+			return this->hooks.size();
+		}
 	};
-} // namespace VFTable
+} // namespace StudioDumper
