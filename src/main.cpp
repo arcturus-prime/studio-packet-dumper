@@ -11,25 +11,48 @@
 CRITICAL_SECTION g_receiveLock;
 StudioDumper::VFTable g_vftable;
 
-void hook(RakNet::RakPeer *rakPeer, void *_1, void *_2, void *_3)
+void hook_24(RakNet::RakPeer* rakPeer, char _1)
 {
     EnterCriticalSection(&g_receiveLock);
 
-    for (unsigned int i = rakPeer->queue.head; i < rakPeer->queue.tail; i++)
+    for (unsigned int i = rakPeer->queue_2.head; i < rakPeer->queue_2.tail; i++)
     {
-        RakNet::Packet *packet = rakPeer->queue.array[i];
+        auto packet = rakPeer->queue_2.array[i];
+
+        printf("Queue 2:\n");
 
         for (unsigned int j = 0; j < packet->size; j++)
         {
             printf("%02x ", packet->data[j]);
         }
 
-        printf("\n\n");
+        printf("\n");
     }
 
     LeaveCriticalSection(&g_receiveLock);
 
-    auto original = (decltype(&hook)) g_vftable.get_previous(119);
+    auto original = (decltype(&hook_24)) g_vftable.get_previous(24);
+    original(rakPeer, _1);
+}
+
+void hook_119(RakNet::RakPeer* rakPeer, size_t _1, size_t _2, size_t _3)
+{
+    EnterCriticalSection(&g_receiveLock);
+
+    for (unsigned int i = rakPeer->queue_2.head; i < rakPeer->queue_2.tail; i++)
+    {
+        auto packet = rakPeer->queue_2.array[i];
+
+        printf("Queue 2:\n");
+
+        printf("Packet: %llx", (uintptr_t) packet);
+
+        printf("\n");
+    }
+
+    LeaveCriticalSection(&g_receiveLock);
+
+    auto original = (decltype(&hook_119)) g_vftable.get_previous(119);
     original(rakPeer, _1, _2, _3);
 }
 
@@ -38,7 +61,7 @@ void Attach()
     InitializeCriticalSection(&g_receiveLock);
     AllocConsole();
 
-    freopen_s((FILE **) stdout, "CONOUT$", "w", stdout);
+    freopen_s((FILE**) stdout, "CONOUT$", "w", stdout);
 
     printf("Searching for VFTable...\n");
 
@@ -52,15 +75,17 @@ void Attach()
     }
 
     g_vftable = vftable_optional.value();
-    printf("Found RakPeer VFTable at: %llx with length: %llu!\n", g_vftable.get_address(), g_vftable.get_size());
+    printf("Found RakPeer VFTable at 0x%llx with length %llu!\n", g_vftable.get_address(), g_vftable.get_size());
 
-    g_vftable.hook(119, (uintptr_t) &hook);
+    g_vftable.hook(24, (uintptr_t) &hook_24);
+    g_vftable.hook(119, (uintptr_t) &hook_119);
 
     printf("Hooked networking!\n");
 }
 
 void Detach()
 {
+    g_vftable.unhook(24);
     g_vftable.unhook(119);
 
     printf("Unhooked networking!\n");
