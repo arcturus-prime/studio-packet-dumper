@@ -56,9 +56,6 @@ class VFTable
 
     inline void hook(size_t position, uintptr_t function)
     {
-        if (position >= this->hooks.size())
-            return;
-
         DWORD oldSetting;
         VirtualProtect((void*) (this->vftable + position), 8, PAGE_READWRITE, (PDWORD) &oldSetting);
 
@@ -70,9 +67,6 @@ class VFTable
 
     inline void unhook(size_t position)
     {
-        if (position >= this->hooks.size())
-            return;
-
         DWORD oldSetting;
         VirtualProtect((void*) (this->vftable + position), 8, PAGE_READWRITE, (PDWORD) &oldSetting);
 
@@ -83,17 +77,11 @@ class VFTable
 
     inline uintptr_t get_current(size_t position)
     {
-        if (position >= this->hooks.size())
-            return 0;
-
         return *(this->vftable + position);
     }
 
     inline uintptr_t get_previous(size_t position)
     {
-        if (position >= this->hooks.size())
-            return 0;
-
         return this->hooks[position];
     }
 
