@@ -12,7 +12,7 @@ class Region
 {
     std::vector<std::pair<uintptr_t, uintptr_t>> sections;
 
-    static inline bool compare(const char *data_1, const char *data_2, const size_t size)
+    static inline bool compare(const char* data_1, const char* data_2, const size_t size)
     {
         for (size_t i = 0; i < size; i++)
         {
@@ -27,12 +27,12 @@ class Region
     {
         Region region;
 
-        auto dos = (IMAGE_DOS_HEADER *)base;
-        auto coff = (IMAGE_NT_HEADERS64 *)(dos->e_lfanew + base);
+        auto dos = (IMAGE_DOS_HEADER*) base;
+        auto coff = (IMAGE_NT_HEADERS64*) (dos->e_lfanew + base);
         auto sections =
-            (IMAGE_SECTION_HEADER *)((uintptr_t)&coff->OptionalHeader + coff->FileHeader.SizeOfOptionalHeader);
+            (IMAGE_SECTION_HEADER*) ((uintptr_t) &coff->OptionalHeader + coff->FileHeader.SizeOfOptionalHeader);
 
-        auto header_size = (uintptr_t)sections + sizeof(IMAGE_SECTION_HEADER) * coff->FileHeader.NumberOfSections;
+        auto header_size = (uintptr_t) sections + sizeof(IMAGE_SECTION_HEADER) * coff->FileHeader.NumberOfSections;
 
         region.sections.push_back({base, header_size});
 
@@ -47,15 +47,15 @@ class Region
         return region;
     }
 
-    inline std::vector<uintptr_t> find(const std::string &match) const
+    inline std::vector<uintptr_t> find(const std::string& match) const
     {
         std::vector<uintptr_t> matches;
 
-        for (auto &section : this->sections)
+        for (auto& section : this->sections)
         {
             for (auto i = section.first; i + match.size() < section.second; i++)
             {
-                auto does_match = compare((char *)i, match.data(), match.size());
+                auto does_match = compare((char*) i, match.data(), match.size());
 
                 if (does_match)
                     matches.push_back(i);
@@ -67,7 +67,7 @@ class Region
 
     inline bool contains(const uintptr_t address) const
     {
-        for (auto &section : this->sections)
+        for (auto& section : this->sections)
         {
             if (section.first < address && address < section.second)
                 return true;
@@ -82,7 +82,7 @@ class Region
             return 0;
 
         uintptr_t smallest = this->sections[0].first;
-        for (auto &section : this->sections)
+        for (auto& section : this->sections)
         {
             if (section.second < smallest)
                 smallest = section.first;

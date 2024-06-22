@@ -12,12 +12,12 @@ namespace StudioDumper
 class VFTable
 {
     std::vector<uintptr_t> hooks;
-    void **vftable;
+    uintptr_t* vftable;
 
   public:
     VFTable() = default;
 
-    static inline std::optional<VFTable> find(const Region &region, const std::string &mangled_name)
+    static inline std::optional<VFTable> find(const Region& region, const std::string& mangled_name)
     {
         auto results = region.find(mangled_name);
         auto base = region.base();
@@ -26,26 +26,26 @@ class VFTable
         {
             unsigned int ibo_type_descriptor = result - base - 0x10;
 
-            auto xref_ibos = region.find(std::string((char *)&ibo_type_descriptor, 4));
+            auto xref_ibos = region.find(std::string((char*) &ibo_type_descriptor, 4));
 
             for (auto xref_ibo : xref_ibos)
             {
                 uintptr_t completeObjLoc = xref_ibo - 0xC;
-                auto vftable = region.find(std::string((char *)&completeObjLoc, 8));
+                auto vftable_results = region.find(std::string((char*) &completeObjLoc, 8));
 
-                if (vftable.empty())
+                if (vftable_results.empty())
                     return std::nullopt;
 
-                auto vftable_void = (void **)vftable[0] + 1;
+                auto vftable = (uintptr_t*) vftable_results[0] + 1;
 
                 size_t i = 0;
-                while (region.contains((uintptr_t)vftable_void[i]))
+                while (region.contains(vftable[i]))
                     i++;
 
                 VFTable ctx;
 
                 ctx.hooks = std::vector<uintptr_t>(i);
-                ctx.vftable = vftable_void;
+                ctx.vftable = vftable;
 
                 return ctx;
             };
@@ -60,12 +60,12 @@ class VFTable
             return;
 
         DWORD oldSetting;
-        VirtualProtect((void *)(vftable + position), 8, PAGE_READWRITE, (PDWORD)&oldSetting);
+        VirtualProtect((void*) (this->vftable + position), 8, PAGE_READWRITE, (PDWORD) &oldSetting);
 
-        this->hooks[position] = (uintptr_t) * (vftable + position);
-        *(vftable + position) = (void *)function;
+        this->hooks[position] = *(this->vftable + position);
+        *(this->vftable + position) = function;
 
-        VirtualProtect((void *)(vftable + position), 8, oldSetting, (PDWORD)&oldSetting);
+        VirtualProtect((void*) (this->vftable + position), 8, oldSetting, (PDWORD) &oldSetting);
     }
 
     inline void unhook(size_t position)
@@ -74,11 +74,11 @@ class VFTable
             return;
 
         DWORD oldSetting;
-        VirtualProtect((void *)(vftable + position), 8, PAGE_READWRITE, (PDWORD)&oldSetting);
+        VirtualProtect((void*) (this->vftable + position), 8, PAGE_READWRITE, (PDWORD) &oldSetting);
 
-        *(vftable + position) = (void *)this->hooks[position];
+        *(this->vftable + position) = this->hooks[position];
 
-        VirtualProtect((void *)(vftable + position), 8, oldSetting, (PDWORD)&oldSetting);
+        VirtualProtect((void*) (this->vftable + position), 8, oldSetting, (PDWORD) &oldSetting);
     }
 
     inline uintptr_t get_current(size_t position)
@@ -86,7 +86,7 @@ class VFTable
         if (position >= this->hooks.size())
             return 0;
 
-        return *(uintptr_t *)(vftable + position);
+        return *(this->vftable + position);
     }
 
     inline uintptr_t get_previous(size_t position)
@@ -99,7 +99,7 @@ class VFTable
 
     inline uintptr_t get_address()
     {
-        return (uintptr_t)this->vftable;
+        return (uintptr_t) this->vftable;
     }
 
     inline size_t get_size()

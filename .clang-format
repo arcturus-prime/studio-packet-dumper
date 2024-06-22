@@ -1,5 +1,7 @@
 ---
 BasedOnStyle: Microsoft
+SpaceAfterCStyleCast: true
+PointerAlignment: Left
 IncludeBlocks: Regroup
 IncludeCategories:
   - Regex: '<.*>'
