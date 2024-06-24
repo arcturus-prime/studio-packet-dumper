@@ -35,27 +35,6 @@ void hook_24(RakNet::RakPeer* rakPeer, char _1)
     original(rakPeer, _1);
 }
 
-void hook_119(RakNet::RakPeer* rakPeer, size_t _1, size_t _2, size_t _3)
-{
-    EnterCriticalSection(&g_receiveLock);
-
-    for (unsigned int i = rakPeer->queue_2.head; i < rakPeer->queue_2.tail; i++)
-    {
-        auto packet = rakPeer->queue_2.array[i];
-
-        printf("Queue 2:\n");
-
-        printf("Packet: %llx", (uintptr_t) packet);
-
-        printf("\n");
-    }
-
-    LeaveCriticalSection(&g_receiveLock);
-
-    auto original = (decltype(&hook_119)) g_vftable.get_previous(119);
-    original(rakPeer, _1, _2, _3);
-}
-
 void Attach()
 {
     InitializeCriticalSection(&g_receiveLock);
@@ -78,7 +57,6 @@ void Attach()
     printf("Found RakPeer VFTable at 0x%llx with length %llu!\n", g_vftable.get_address(), g_vftable.get_size());
 
     g_vftable.hook(24, (uintptr_t) &hook_24);
-    g_vftable.hook(119, (uintptr_t) &hook_119);
 
     printf("Hooked networking!\n");
 }
@@ -86,7 +64,6 @@ void Attach()
 void Detach()
 {
     g_vftable.unhook(24);
-    g_vftable.unhook(119);
 
     printf("Unhooked networking!\n");
 }

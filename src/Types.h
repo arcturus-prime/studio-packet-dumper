@@ -10,12 +10,8 @@ struct Packet
     unsigned char* data;
 };
 
-struct SomePacket
-{
-};
-
 template <typename T>
-struct PacketQueue
+struct Queue
 {
     T** array;
     unsigned int head;
@@ -25,9 +21,17 @@ struct PacketQueue
 
 struct RakPeer
 {
-    char unknown_1[0x4d0];
-    PacketQueue<SomePacket> queue_1;
-    char unknown_2[0x408];
-    PacketQueue<Packet> queue_2;
+    char unknown_1[0x4c8];
+    Queue<unsigned char> queue_1;
+    char unknown_2[0x410];
+    Queue<Packet> queue_2;
 };
 } // namespace RakNet
+
+// Queue_2 head/tail write:
+// head: RobloxStudioBeta.exe+1B0E980
+// tail: RobloxStudioBeta.exe+1B07E29
+
+// Queue_1 head/tail write:
+// head: RobloxStudioBeta.exe+1B06D6D
+// tail: RobloxStudioBeta.exe+1B08469
