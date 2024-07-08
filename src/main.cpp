@@ -19,7 +19,7 @@ void hook_24(RakNet::RakPeer* rakPeer, char _1)
     {
         auto packet = rakPeer->queue_2.array[i];
 
-        printf("Queue 2:\n");
+        printf("Data:\n");
 
         for (unsigned int j = 0; j < packet->size; j++)
         {

@@ -24,7 +24,7 @@ class VFTable
 
         for (auto result : results)
         {
-            unsigned int ibo_type_descriptor = result - base - 0x10;
+            unsigned int ibo_type_descriptor = (unsigned int) (result - base - 0x10);
 
             auto xref_ibos = region.find(std::string((char*) &ibo_type_descriptor, 4));
 
