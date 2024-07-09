@@ -1,0 +1,11 @@
+---
+BasedOnStyle: Microsoft
+SpaceAfterCStyleCast: true
+AlwaysBreakTemplateDeclarations: true
+PointerAlignment: Left
+IncludeBlocks: Regroup
+IncludeCategories:
+  - Regex: '<.*>'
+    Priority: 1
+  - Regex: '"(.*/)*.*"'
+    Priority: 0
