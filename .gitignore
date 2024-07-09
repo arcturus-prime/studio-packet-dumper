@@ -2,3 +2,4 @@ dumper/build/
 dumper/.cache/
 
 target/
+*.lock
