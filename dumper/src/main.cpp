@@ -64,8 +64,6 @@ void Attach()
     g_vftable = vftable_optional.value();
     printf("Found RakPeer VFTable at 0x%llx with length %llu!\n", g_vftable.get_address(), g_vftable.get_size());
 
-    CreatePipe();
-
     g_pipe = CreatePipe();
 
     if (g_pipe == INVALID_HANDLE_VALUE)

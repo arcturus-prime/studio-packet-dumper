@@ -17,14 +17,16 @@ async fn main() {
 
     println!("Connected!");
 
+    let mut buffer = vec![0; 1024 * 512];
+
     loop {
         client.readable().await.unwrap();
 
-        let mut data = Vec::with_capacity(4096);
-
-        match client.try_read(&mut data) {
-            Ok(n) => println!("Received message of length {}: {:?}", n, data),
+        let size = match client.try_read(&mut buffer) {
+            Ok(n) => if n == 0 { continue } else { n },
             Err(_) => continue,
-        }
+        };
+
+        println!("Received message of length {}: {:?}", size, &buffer[..size])
     }
 }
