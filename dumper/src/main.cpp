@@ -16,6 +16,12 @@ CRITICAL_SECTION g_receiveLock;
 StudioDumper::VFTable g_vftable;
 HANDLE g_pipe;
 
+HANDLE CreatePipe() {
+    return CreateNamedPipe(TEXT("\\\\.\\pipe\\StudioDumper"), PIPE_ACCESS_DUPLEX,
+                             PIPE_TYPE_MESSAGE | PIPE_READMODE_MESSAGE | PIPE_NOWAIT, 1, PIPE_BUFFER_SIZE,
+                             PIPE_BUFFER_SIZE, 500, NULL);
+}
+
 void hook_24(RakNet::RakPeer* rakPeer, char _1)
 {
     EnterCriticalSection(&g_receiveLock);
@@ -25,7 +31,7 @@ void hook_24(RakNet::RakPeer* rakPeer, char _1)
         auto packet = rakPeer->queue_2.array[i];
 
         if (g_pipe == INVALID_HANDLE_VALUE)
-            break;
+            break; 
 
         DWORD num;
         WriteFile(g_pipe, packet->data, packet->size, &num, NULL);
@@ -58,9 +64,9 @@ void Attach()
     g_vftable = vftable_optional.value();
     printf("Found RakPeer VFTable at 0x%llx with length %llu!\n", g_vftable.get_address(), g_vftable.get_size());
 
-    g_pipe = CreateNamedPipe(TEXT("\\\\.\\pipe\\StudioDumper"), PIPE_ACCESS_DUPLEX,
-                             PIPE_TYPE_MESSAGE | PIPE_READMODE_MESSAGE | PIPE_NOWAIT, 1, PIPE_BUFFER_SIZE,
-                             PIPE_BUFFER_SIZE, 500, NULL);
+    CreatePipe();
+
+    g_pipe = CreatePipe();
 
     if (g_pipe == INVALID_HANDLE_VALUE)
     {
