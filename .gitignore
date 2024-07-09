@@ -1,5 +1,5 @@
 dumper/build/
 dumper/.cache/
 
-target/
+client/target/
 *.lock
