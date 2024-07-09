@@ -4,12 +4,23 @@
 
 #include <cstdint>
 #include <cstdio>
+#include <fileapi.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <windows.h>
+#include <winsock.h>
+
+constexpr size_t PIPE_BUFFER_SIZE = 512 * 1024; // 512 KB
 
 CRITICAL_SECTION g_receiveLock;
 StudioDumper::VFTable g_vftable;
+HANDLE g_pipe;
+
+HANDLE CreatePipe() {
+    return CreateNamedPipe(TEXT("\\\\.\\pipe\\StudioDumper"), PIPE_ACCESS_DUPLEX,
+                             PIPE_TYPE_MESSAGE | PIPE_READMODE_MESSAGE | PIPE_NOWAIT, 1, PIPE_BUFFER_SIZE,
+                             PIPE_BUFFER_SIZE, 500, NULL);
+}
 
 void hook_24(RakNet::RakPeer* rakPeer, char _1)
 {
@@ -19,14 +30,11 @@ void hook_24(RakNet::RakPeer* rakPeer, char _1)
     {
         auto packet = rakPeer->queue_2.array[i];
 
-        printf("Data:\n");
+        if (g_pipe == INVALID_HANDLE_VALUE)
+            break; 
 
-        for (unsigned int j = 0; j < packet->size; j++)
-        {
-            printf("%02x ", packet->data[j]);
-        }
-
-        printf("\n");
+        DWORD num;
+        WriteFile(g_pipe, packet->data, packet->size, &num, NULL);
     }
 
     LeaveCriticalSection(&g_receiveLock);
@@ -56,9 +64,19 @@ void Attach()
     g_vftable = vftable_optional.value();
     printf("Found RakPeer VFTable at 0x%llx with length %llu!\n", g_vftable.get_address(), g_vftable.get_size());
 
+    g_pipe = CreatePipe();
+
+    if (g_pipe == INVALID_HANDLE_VALUE)
+    {
+        printf("Failed to open named pipe, aborting...");
+        return;
+    }
+
+    printf("Created named pipe.\n");
+
     g_vftable.hook(24, (uintptr_t) &hook_24);
 
-    printf("Hooked networking!\n");
+    printf("Hooked networking!");
 }
 
 void Detach()
@@ -66,6 +84,10 @@ void Detach()
     g_vftable.unhook(24);
 
     printf("Unhooked networking!\n");
+
+    CloseHandle(g_pipe);
+
+    printf("Closed pipe handle!\n");
 }
 
 BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved)

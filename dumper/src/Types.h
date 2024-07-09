@@ -27,11 +27,3 @@ struct RakPeer
     Queue<Packet> queue_2;
 };
 } // namespace RakNet
-
-// Queue_2 head/tail write:
-// head: RobloxStudioBeta.exe+1B0E980
-// tail: RobloxStudioBeta.exe+1B07E29
-
-// Queue_1 head/tail write:
-// head: RobloxStudioBeta.exe+1B06D6D
-// tail: RobloxStudioBeta.exe+1B08469

@@ -2,8 +2,12 @@
 This project is meant to display all networking data sent through the local connection between the self-hosted server and client when using the Test mode in Roblox Studio
 
 ### Building
-There are currently no custom build options and building can be done as normal with CMake and MSVC. Running the following in the root project directory should suffice:
+The project consists of two parts: the client and the dumper. The dumper builds a DLL that dumps raw packet data for the client to then process.
+
+#### Dumper
+Use CMake with MSVC:
 ```
+cd dumper
 mkdir build
 cd build
 cmake ..
@@ -16,5 +20,11 @@ cmake .. -G "Ninja" -DCMAKE_BUILD_TYPE=Release
 cmake --build . 
 ```
 
+#### Client
+Just use cargo:
+```
+cargo build
+```
+
 ### Usage
-After building (or downloading the release), all that is needed is a way to inject the DLL. This can be done through a number of publicly available DLL injectors. One such example is the "Inject DLL" misc option in [Process Hacker 2](https://processhacker.sourceforge.io).
+After building (or downloading the release), you need to inject the DLL into a Studio process. This can be done through a number of publicly available DLL injectors, such as the "Inject DLL" misc option in [Process Hacker 2](https://processhacker.sourceforge.io). Once injected, run the client to connect to it and display the data.
