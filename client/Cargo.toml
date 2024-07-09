@@ -1,5 +1,5 @@
 [package]
-name = "studio-packet-dumper-server"
+name = "studio-packet-dumper-client"
 version = "0.1.0"
 edition = "2021"
 
