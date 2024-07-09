@@ -4,20 +4,19 @@
 
 #include <cstdint>
 #include <cstdio>
-#include <fileapi.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <windows.h>
-#include <winsock.h>
 
 constexpr size_t PIPE_BUFFER_SIZE = 512 * 1024; // 512 KB
 
 CRITICAL_SECTION g_receiveLock;
 StudioDumper::VFTable g_vftable;
-HANDLE g_pipe;
+HANDLE g_pipe = INVALID_HANDLE_VALUE;
 
-HANDLE CreatePipe() {
-    return CreateNamedPipe(TEXT("\\\\.\\pipe\\StudioDumper"), PIPE_ACCESS_DUPLEX,
+void MakePipe()
+{
+    g_pipe = CreateNamedPipe(TEXT("\\\\.\\pipe\\StudioDumper"), PIPE_ACCESS_DUPLEX,
                              PIPE_TYPE_MESSAGE | PIPE_READMODE_MESSAGE | PIPE_NOWAIT, 1, PIPE_BUFFER_SIZE,
                              PIPE_BUFFER_SIZE, 500, NULL);
 }
@@ -30,11 +29,17 @@ void hook_24(RakNet::RakPeer* rakPeer, char _1)
     {
         auto packet = rakPeer->queue_2.array[i];
 
-        if (g_pipe == INVALID_HANDLE_VALUE)
-            break; 
-
         DWORD num;
-        WriteFile(g_pipe, packet->data, packet->size, &num, NULL);
+        auto result = WriteFile(g_pipe, packet->data, packet->size, &num, NULL);
+
+        if (result)
+            continue;
+
+        if (GetLastError() == ERROR_NO_DATA)
+        {
+            CloseHandle(g_pipe);
+            MakePipe();
+        }
     }
 
     LeaveCriticalSection(&g_receiveLock);
@@ -64,7 +69,7 @@ void Attach()
     g_vftable = vftable_optional.value();
     printf("Found RakPeer VFTable at 0x%llx with length %llu!\n", g_vftable.get_address(), g_vftable.get_size());
 
-    g_pipe = CreatePipe();
+    MakePipe();
 
     if (g_pipe == INVALID_HANDLE_VALUE)
     {

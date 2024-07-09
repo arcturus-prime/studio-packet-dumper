@@ -1,5 +1,5 @@
 pub enum Packet {
-	Test {
+	RemoteEvent {
 		hello: u8,
 	}
 }
