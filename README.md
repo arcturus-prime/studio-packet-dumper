@@ -5,6 +5,7 @@ This project is meant to display all networking data sent through the local conn
 The project consists of two parts: the client and the dumper. The dumper builds a DLL that dumps raw packet data for the client to then process.
 
 #### Dumper
+Use CMake with MSVC:
 ```
 cd dumper
 mkdir build
@@ -26,5 +27,4 @@ cargo build
 ```
 
 ### Usage
-After building (or downloading the release), you need to inject the DLL into a Studio process. This can be done through a number of publicly available DLL injectors. One such example is the "Inject DLL" misc option in [Process Hacker 2](https://processhacker.sourceforge.io).
-Once injected, run the client to connect to it and display the data.
+After building (or downloading the release), you need to inject the DLL into a Studio process. This can be done through a number of publicly available DLL injectors, such as the "Inject DLL" misc option in [Process Hacker 2](https://processhacker.sourceforge.io). Once injected, run the client to connect to it and display the data.

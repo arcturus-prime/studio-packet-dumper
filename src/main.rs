@@ -1,3 +1,5 @@
+mod packet;
+
 use tokio::net::windows::named_pipe::ClientOptions;
 
 #[tokio::main(flavor = "current_thread")]
