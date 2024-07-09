@@ -1,37 +1,20 @@
-use tokio::net::windows::named_pipe::ClientOptions;
+use tokio::{io::Interest, net::windows::named_pipe::ClientOptions};
 
-#[tokio::main]
+#[tokio(main)]
 async fn main() {
-    println!("Connecting to server...");
+   println!("Starting server...");
 
     let client = loop {
-        tokio::time::sleep(tokio::time::Duration::from_millis(300)).await;
-
-        let options = ClientOptions::new().open(r"\\.\pipe\StudioDumper");
+        let options = ClientOptions::new().open(r"//./pipe/StudioDumper");
 
         match options {
             Ok(client) => break client,
-            Err(_) => {
-                println!("An error occured. Retrying...");
-                continue;
-            },
+            Err(e) if e.raw_os_error() == Some(ERROR_PIPE_BUSY.0 as i32) => println!("Pipe busy! Retrying..."),
+            Err(_) => println!("An unknown error occured. Retrying..."),
         }
     };
 
-    println!("Connected!");
+    let ready = client.ready(Interest::READABLE).await.unwrap();
 
-    loop {
-        client.readable().await.unwrap();
-
-        let mut data = Vec::new();
-
-        let size = match client.try_read(&mut data) {
-            Ok(n) => n,
-            Err(_) => { 
-                continue;
-            }
-        };
-
-        println!("Message of {} bytes: {:?}", size, data)
-    }
+    println!("Server started!");
 }
