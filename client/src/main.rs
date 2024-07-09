@@ -27,6 +27,6 @@ async fn main() {
             Err(_) => continue,
         };
 
-        println!("Received message of length {}: {:?}", size, &buffer[..size])
+        println!("Incoming Packet: {:02X?}", &buffer[..size])
     }
 }
