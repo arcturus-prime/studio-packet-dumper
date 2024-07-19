@@ -30,9 +30,10 @@ void hook_24(RakNet::RakPeer* rakPeer, char _1)
         auto packet = rakPeer->queue_2.array[i];
 
         DWORD num;
-        auto result = WriteFile(g_pipe, packet->data, packet->size, &num, NULL);
+        auto result_1 = WriteFile(g_pipe, (uint8_t*) &packet->size, 4, &num, NULL);
+        auto result_2 = WriteFile(g_pipe, packet->data, packet->size, &num, NULL);
 
-        if (result)
+        if (result_1 && result_2)
             continue;
 
         if (GetLastError() == ERROR_NO_DATA)

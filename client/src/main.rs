@@ -1,12 +1,12 @@
 mod packet;
 
-use tokio::net::windows::named_pipe::ClientOptions;
+use tokio::{io::AsyncReadExt, net::windows::named_pipe::ClientOptions};
 
 #[tokio::main(flavor = "current_thread")]
 async fn main() {
     println!("Connecting to server...");
 
-    let client = loop {
+    let mut client = loop {
         let options = ClientOptions::new().open(r"//./pipe/StudioDumper");
 
         match options {
@@ -22,11 +22,14 @@ async fn main() {
     loop {
         client.readable().await.unwrap();
 
-        let size = match client.try_read(&mut buffer) {
-            Ok(n) => if n == 0 { continue } else { n },
-            Err(_) => continue,
+        let Ok(size) = client.read_u32_le().await else {
+            continue;
         };
 
-        println!("Incoming Packet: {:02X?}", &buffer[..size])
+        if let Err(_) = client.read_exact(&mut buffer[..size as usize]).await {
+            continue;
+        }
+
+        println!("Incoming Packet: {:02X?}", &buffer[..size as usize]);
     }
 }

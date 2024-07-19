@@ -3,6 +3,7 @@
 #include "Region.h"
 
 #include <cstdint>
+#include <iostream>
 #include <optional>
 #include <string>
 #include <windows.h>
@@ -15,8 +16,6 @@ class VFTable
     uintptr_t* vftable;
 
   public:
-    VFTable() = default;
-
     static inline std::optional<VFTable> find(const Region& region, const std::string& mangled_name)
     {
         auto results = region.find(mangled_name);
@@ -28,13 +27,13 @@ class VFTable
 
             auto xref_ibos = region.find(std::string((char*) &ibo_type_descriptor, 4));
 
-            for (auto xref_ibo : xref_ibos)
+            for (const auto& xref_ibo : xref_ibos)
             {
                 uintptr_t completeObjLoc = xref_ibo - 0xC;
                 auto vftable_results = region.find(std::string((char*) &completeObjLoc, 8));
 
                 if (vftable_results.empty())
-                    return std::nullopt;
+                    continue;
 
                 auto vftable = (uintptr_t*) vftable_results[0] + 1;
 
@@ -48,7 +47,7 @@ class VFTable
                 ctx.vftable = vftable;
 
                 return ctx;
-            };
+            }
         }
 
         return std::nullopt;
