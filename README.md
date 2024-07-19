@@ -23,6 +23,7 @@ cmake --build .
 #### Client
 Just use cargo:
 ```
+cd client
 cargo build
 ```
 
