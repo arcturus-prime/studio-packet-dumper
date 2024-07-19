@@ -1,5 +1,5 @@
 ### Purpose
-This project is meant to display all networking data sent through the local connection between the self-hosted server and client when using the Test mode in Roblox Studio
+This project is meant to display all RakNet traffic sent through the local connection between the self-hosted server and client when using the Test mode in Roblox Studio
 
 ### Building
 The project consists of two parts: the client and the dumper. The dumper builds a DLL that dumps raw packet data for the client to then process.
