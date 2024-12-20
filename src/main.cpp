@@ -15,14 +15,14 @@ void hook_24(RakNet::RakPeer* rakPeer, char _1)
 {
     EnterCriticalSection(&g_receiveLock);
 
-    for (unsigned int i = rakPeer->queue_2.head; i < rakPeer->queue_2.tail; i++)
+    for (uint32_t i = rakPeer->queue_2.head; i < rakPeer->queue_2.tail; i++)
     {
         auto packet = rakPeer->queue_2.array[i];
 
         printf("Incoming message:\n");
 
-        for (uint32_t i = 0; i < packet->size; i++) {
-            printf("0x%02x ", packet->data[i]);
+        for (uint32_t j = 0; j < packet->size; j++) {
+            printf("0x%02x ", packet->data[j]);
         }
 
         printf("\n\n");
