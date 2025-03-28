@@ -19,4 +19,4 @@ cmake --build .
 ```
 
 ### Usage
-After building (or downloading the release), you need to inject the DLL into a Studio process. This can be done through a number of publicly available DLL injectors, such as the "Inject DLL" misc option in [Process Hacker 2](https://processhacker.sourceforge.io). Once injected, a window should appear with all the networking data being sent over the local Studio socket.
+After building (or downloading the release), you need to inject the DLL into a Studio process. This can be done through a number of publicly available DLL injectors, such as the "Load Module" option in [System Informer](https://systeminformer.sourceforge.io/). Once injected, a window should appear with all the networking data being sent over the local Studio socket.
