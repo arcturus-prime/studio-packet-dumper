@@ -29,6 +29,9 @@ jobs:
           path: ${{github.workspace}}/build/${{env.BUILD_TYPE}}/dumper.dll
 
   release:
+    permissions:
+      contents: write
+      
     needs: build
     runs-on: windows-latest
     steps:
