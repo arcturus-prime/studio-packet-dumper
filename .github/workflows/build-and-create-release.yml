@@ -49,13 +49,6 @@ jobs:
           major_regexp_flags: ""
           minor_pattern: (MINOR)
           minor_regexp_flags: ""
-  
-      - name: Update CHANGELOG
-        id: changelog
-        uses: requarks/changelog-action@v1
-        with:
-          token: ${{ github.token }}
-          tag: ${{ github.ref_name }}
 
       - name: Create release
         id: create_release
@@ -65,7 +58,7 @@ jobs:
         with:
           tag_name: ${{ steps.versioning.outputs.version_tag }}
           release_name: ${{ steps.versioning.outputs.version_tag }}
-          body: ${{ steps.changelog.outputs.changes }}
+          body: ""
           draft: true
           prerelease: false
 
