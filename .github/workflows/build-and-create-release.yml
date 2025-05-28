@@ -42,7 +42,7 @@ jobs:
         uses: actions/download-artifact@v4.3.0
         with:
           name: dumper
-          path: ${{ github.workspace }}/dumper.dll
+          path: ${{ github.workspace }}/build
 
       - uses: paulhatch/semantic-version@v5.4.0
         id: versioning
@@ -71,7 +71,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ${{ github.workspace }}/dumper.dll
+          asset_path: ${{ github.workspace }}/build/dumper.dll
           asset_name: dumper.dll
           asset_content_type: application/octet-stream
 
