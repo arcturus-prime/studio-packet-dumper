@@ -26,7 +26,7 @@ jobs:
         uses: actions/upload-artifact@v4.6.2
         with:
           name: dumper
-          path: ${{github.workspace}}/build/dumper.dll
+          path: ${{github.workspace}}/build/${{env.BUILD_TYPE}}/dumper.dll
 
   release:
     needs: build
