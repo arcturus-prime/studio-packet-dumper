@@ -6,6 +6,7 @@
 #include "VFTable.h"
 #include "MenuState.h"
 
+#include <iostream>
 #include <stdio.h>  // printf, fprintf
 #include <stdlib.h> // abort
 #include <windows.h>
@@ -365,7 +366,7 @@ GLFWwindow* SetupGraphics()
 
     // Create window with Vulkan context
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-    GLFWwindow* window = glfwCreateWindow(1280, 720, "Dear ImGui GLFW+Vulkan example", nullptr, nullptr);
+    GLFWwindow* window = glfwCreateWindow(1280, 720, "Studio Packet Dumper", nullptr, nullptr);
     if (!glfwVulkanSupported())
     {
         printf("GLFW: Vulkan Not Supported\n");
@@ -423,43 +424,22 @@ GLFWwindow* SetupGraphics()
     init_info.CheckVkResultFn = check_vk_result;
     ImGui_ImplVulkan_Init(&init_info);
 
-    // Load Fonts
-    // - If no fonts are loaded, dear imgui will use the default font. You can also load multiple fonts and use
-    // ImGui::PushFont()/PopFont() to select them.
-    // - AddFontFromFileTTF() will return the ImFont* so you can store it if you need to select the font among multiple.
-    // - If the file cannot be loaded, the function will return a nullptr. Please handle those errors in your
-    // application (e.g. use an assertion, or display an error and quit).
-    // - The fonts will be rasterized at a given size (w/ oversampling) and stored into a texture when calling
-    // ImFontAtlas::Build()/GetTexDataAsXXXX(), which ImGui_ImplXXXX_NewFrame below will call.
-    // - Use '#define IMGUI_ENABLE_FREETYPE' in your imconfig file to use Freetype for higher quality font rendering.
-    // - Read 'docs/FONTS.md' for more instructions and details.
-    // - Remember that in C/C++ if you want to include a backslash \ in a string literal you need to write a double
-    // backslash \\ !
-    // io.Fonts->AddFontDefault();
-    // io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\segoeui.ttf", 18.0f);
-    // io.Fonts->AddFontFromFileTTF("../../misc/fonts/DroidSans.ttf", 16.0f);
-    // io.Fonts->AddFontFromFileTTF("../../misc/fonts/Roboto-Medium.ttf", 16.0f);
-    // io.Fonts->AddFontFromFileTTF("../../misc/fonts/Cousine-Regular.ttf", 15.0f);
-    // ImFont* font = io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\ArialUni.ttf", 18.0f, nullptr,
-    // io.Fonts->GetGlyphRangesJapanese()); IM_ASSERT(font != nullptr);
-
     return window;
 }
 
-void hook_24(RakNet::RakPeer* rakPeer, char _1)
+void hook_25(RakNet::RakPeer* rakPeer, char _1)
 {
     EnterCriticalSection(&g_receiveLock);
 
     for (uint32_t i = rakPeer->queue_2.head; i < rakPeer->queue_2.tail; i++)
     {
         auto packet = rakPeer->queue_2.array[i];
-
         g_menu.add_packet(packet->data, packet->size);
     }
 
     LeaveCriticalSection(&g_receiveLock);
 
-    auto original = (decltype(&hook_24)) g_vftable.get_previous(24);
+    auto original = (decltype(&hook_25)) g_vftable.get_previous(25);
     original(rakPeer, _1);
 }
 
@@ -476,10 +456,10 @@ void Attach()
         return;
     }
 
-    g_vftable = vftable_optional.value();
-    g_vftable.hook(24, (uintptr_t) &hook_24);
-
     auto window = SetupGraphics();
+
+    g_vftable = vftable_optional.value();
+    g_vftable.hook(25, (uintptr_t) &hook_25);
 
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
     ImGui_ImplVulkanH_Window* wd = &g_MainWindowData;
@@ -513,7 +493,7 @@ void Attach()
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
 
-        g_menu.render();
+        g_menu.draw();
 
         // Rendering
         ImGui::Render();
@@ -532,7 +512,7 @@ void Attach()
     }
 
     CleanupGraphics(window);
-    g_vftable.unhook(24);
+    g_vftable.unhook(25);
 }
 
 BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved)
