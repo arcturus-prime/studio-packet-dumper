@@ -19,34 +19,33 @@ set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
 # SETUP IMGUI
 
 add_library(imgui_glfw_vulkan STATIC
-	${imgui_SOURCE_DIR}/imgui.cpp
-	${imgui_SOURCE_DIR}/imgui_draw.cpp
-	${imgui_SOURCE_DIR}/imgui_demo.cpp
-	${imgui_SOURCE_DIR}/imgui_tables.cpp
-	${imgui_SOURCE_DIR}/imgui_widgets.cpp
+ ${imgui_SOURCE_DIR}/imgui.cpp
+ ${imgui_SOURCE_DIR}/imgui_draw.cpp
+ ${imgui_SOURCE_DIR}/imgui_demo.cpp
+ ${imgui_SOURCE_DIR}/imgui_tables.cpp
+ ${imgui_SOURCE_DIR}/imgui_widgets.cpp
 
-	${imgui_SOURCE_DIR}/backends/imgui_impl_glfw.cpp
-	${imgui_SOURCE_DIR}/backends/imgui_impl_vulkan.cpp
+ ${imgui_SOURCE_DIR}/backends/imgui_impl_glfw.cpp
+ ${imgui_SOURCE_DIR}/backends/imgui_impl_vulkan.cpp
 )
 
 target_link_libraries(imgui_glfw_vulkan PUBLIC Vulkan::Vulkan glfw)
 target_include_directories(imgui_glfw_vulkan PUBLIC
-	${imgui_SOURCE_DIR}
-	${imgui_SOURCE_DIR}/backends
+ ${imgui_SOURCE_DIR}
+ ${imgui_SOURCE_DIR}/backends
 )
 
 # COMPILE PROJECT
-set(PROJECT_SOURCE_FILES 
-	src/main.cpp 
-	src/gui.cpp
+set(PROJECT_SOURCE_FILES
+ src/main.cpp
 )
 
 add_library(dumper SHARED ${PROJECT_SOURCE_FILES})
 
 if(MSVC)
-  target_compile_options(dumper PRIVATE /W4 /WX)
+    target_compile_options(dumper PRIVATE /W4 /WX)
 else()
-  target_compile_options(dumper PRIVATE -Wall -Wextra -Wpedantic -Werror)
+    target_compile_options(dumper PRIVATE -Wall -Wextra -Wpedantic -Werror)
 endif()
 
 target_compile_features(dumper PRIVATE cxx_std_17)
