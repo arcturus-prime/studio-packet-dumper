@@ -21,7 +21,7 @@ struct Queue
 
 struct RakPeer
 {
-    char unknown_1[0x508];
+    char unknown_1[0x4F0];
     Queue<unsigned char> queue_1;
     char unknown_2[0x410];
     Queue<Packet> queue_2;

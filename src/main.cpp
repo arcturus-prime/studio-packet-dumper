@@ -9,7 +9,7 @@
 CRITICAL_SECTION g_receiveLock;
 StudioDumper::VFTable g_vftable;
 
-void hook_24(RakNet::RakPeer* rakPeer, char _1)
+void hook_25(RakNet::RakPeer* rakPeer, char _1)
 {
     EnterCriticalSection(&g_receiveLock);
 
@@ -24,7 +24,7 @@ void hook_24(RakNet::RakPeer* rakPeer, char _1)
         auto packet = rakPeer->queue_2.array[i];
 
         for (uint32_t j = 0; j < packet->size; j++) {
-            buffer << std::setw(2) << (uint32_t) packet->data[j] << " "; 
+            buffer << std::setw(2) << (uint32_t) packet->data[j] << " ";
         }
 
         std::cout << buffer.str() << std::endl << std::endl;
@@ -33,7 +33,7 @@ void hook_24(RakNet::RakPeer* rakPeer, char _1)
 
     LeaveCriticalSection(&g_receiveLock);
 
-    auto original = (decltype(&hook_24)) g_vftable.get_previous(24);
+    auto original = (decltype(&hook_25)) g_vftable.get_previous(25);
     original(rakPeer, _1);
 }
 
@@ -59,14 +59,14 @@ void Attach()
 
     std::cout << "Found RakPeer VFTable at 0x" << std::hex << g_vftable.get_address() << " with length " <<  g_vftable.get_size() << "!" << std::endl;
 
-    g_vftable.hook(24, (uintptr_t) &hook_24);
+    g_vftable.hook(25, (uintptr_t) &hook_25);
 
     std::cout << "Hooked networking!" << std::endl;
 }
 
 void Detach()
 {
-    g_vftable.unhook(24);
+    g_vftable.unhook(25);
 
     std::cout << "Unhooked networking!" << std::endl;
 }
