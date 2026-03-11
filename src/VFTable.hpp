@@ -1,9 +1,8 @@
 #pragma once
 
-#include "Region.h"
+#include "Region.hpp"
 
 #include <cstdint>
-#include <iostream>
 #include <optional>
 #include <string>
 #include <windows.h>

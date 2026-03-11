@@ -1,10 +1,10 @@
-#include "Region.h"
-#include "Types.h"
-#include "VFTable.h"
+#include "Region.hpp"
+#include "Types.hpp"
+#include "VFTable.hpp"
+#include "PacketWriter.hpp"
 
-#include <sstream>
-#include <iomanip>
 #include <windows.h>
+#include <iostream>
 
 CRITICAL_SECTION g_receiveLock;
 StudioDumper::VFTable g_vftable;
@@ -13,22 +13,14 @@ void hook_25(RakNet::RakPeer* rakPeer, char _1)
 {
     EnterCriticalSection(&g_receiveLock);
 
-    std::stringstream buffer;
-
     for (uint32_t i = rakPeer->queue_2.head; i < rakPeer->queue_2.tail; i++)
     {
-        buffer << std::hex << std::setfill('0');
-
-        std::cout << "Incoming message:" << std::endl;
-
         auto packet = rakPeer->queue_2.array[i];
+        auto stream = NetworkStream(packet->data, packet->size);
 
-        for (uint32_t j = 0; j < packet->size; j++) {
-            buffer << std::setw(2) << (uint32_t) packet->data[j] << " ";
+        while (!stream.is_empty()) {
+            std::cout << print_packet(stream) << std::endl << std::endl;
         }
-
-        std::cout << buffer.str() << std::endl << std::endl;
-        buffer.clear();
     }
 
     LeaveCriticalSection(&g_receiveLock);
