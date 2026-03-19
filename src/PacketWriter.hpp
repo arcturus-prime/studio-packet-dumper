@@ -1,9 +1,9 @@
 #include "NetworkStream.hpp"
+#include "NetworkContext.hpp"
 
 #include <cstdint>
 #include <iomanip>
 #include <iostream>
-#include <sstream>
 #include <string>
 
 enum class PacketId : uint8_t
@@ -157,28 +157,30 @@ static inline std::string get_id_data_type(uint8_t type)
     }
 }
 
-static inline void print_id_ping(NetworkStream& stream, std::stringstream& out)
+static inline void print_id_ping(NetworkContext& context, NetworkStream& stream)
 {
+    (void) context;
+
     uint8_t version = *stream.read_u8();
 
     uint64_t timestamp = 0;
     if (version <= 1)
     {
         timestamp = *stream.read_u64_be();
-        out << "Timestamp: " << timestamp << std::endl;
+        std::cout << "Timestamp: " << timestamp << std::endl;
     }
     else if (version == 2)
     {
-        out << "Int1 (Unknown): " << *stream.read_u32_be() << std::endl;
+        std::cout << "Int1 (Unknown): " << *stream.read_u32_be() << std::endl;
         timestamp = *stream.read_u32_be();
-        out << "Timestamp: " << timestamp << std::endl;
-        out << "FPS1: " << *stream.read_f32_be() << std::endl;
-        out << "FPS2: " << *stream.read_f32_be() << std::endl;
-        out << "FPS3: " << *stream.read_f32_be() << std::endl;
+        std::cout << "Timestamp: " << timestamp << std::endl;
+        std::cout << "FPS1: " << *stream.read_f32_be() << std::endl;
+        std::cout << "FPS2: " << *stream.read_f32_be() << std::endl;
+        std::cout << "FPS3: " << *stream.read_f32_be() << std::endl;
     }
     else
     {
-        out << "Invalid version" << std::endl;
+        std::cout << "Invalid version" << std::endl;
     }
 
     uint32_t sendStats = *stream.read_u32_be();
@@ -189,16 +191,18 @@ static inline void print_id_ping(NetworkStream& stream, std::stringstream& out)
         extraStats ^= 0xFFFFFFFF;
     }
 
-    out << "Send Stats: " << std::hex << std::setfill('0') << sendStats << std::endl;
-    out << "Extra Stats: " << std::hex << std::setfill('0') << extraStats << std::endl;
+    std::cout << "Send Stats: " << std::hex << std::setfill('0') << sendStats << std::endl;
+    std::cout << "Extra Stats: " << std::hex << std::setfill('0') << extraStats << std::endl;
 }
 
-static inline void print_id_ping_back(NetworkStream& stream, std::stringstream& out)
+static inline void print_id_ping_back(NetworkContext& context, NetworkStream& stream)
 {
-    out << "IsPingBack: " << *stream.read_bool_byte() << std::endl;
+    (void) context;
+
+    std::cout << "IsPingBack: " << *stream.read_bool_byte() << std::endl;
 
     uint64_t timestamp = *stream.read_u64_be();
-    out << "Timestamp: " << timestamp << std::endl;
+    std::cout << "Timestamp: " << timestamp << std::endl;
 
     uint32_t sendStats = *stream.read_u32_be();
     uint32_t extraStats = *stream.read_u32_be();
@@ -208,51 +212,70 @@ static inline void print_id_ping_back(NetworkStream& stream, std::stringstream& 
         extraStats ^= 0xFFFFFFFF;
     }
 
-    out << "Send Stats: " << std::hex << std::setfill('0') << sendStats << std::endl;
-    out << "Extra Stats: " << std::hex << std::setfill('0') << extraStats << std::endl;
+    std::cout << "Send Stats: " << std::hex << std::setfill('0') << sendStats << std::endl;
+    std::cout << "Extra Stats: " << std::hex << std::setfill('0') << extraStats << std::endl;
 }
 
-static inline void print_id_data(NetworkStream& stream, std::stringstream& out)
+static inline void print_id_event(NetworkContext& context, NetworkStream& stream)
 {
+    (void) context;
+
+    uint64_t peerId = *stream.read_varuint64();
+
+    std::cout << "Peer ID: 0x" << std::hex << (uint32_t) peerId << std::endl;
+    if (peerId == 0) {
+        std::cout << "IsNull: true" << std::endl;
+
+        return;
+    }
+
+    std::cout << "IsNull: false" << std::endl;
+    std::cout << "Reference ID: " << std::hex << *stream.read_u32_le() << std::endl;
+    std::cout << "Event ID: " << std::hex << *stream.read_u16_be() << std::endl;
+}
+
+static inline void print_id_data(NetworkContext& context, NetworkStream& stream)
+{
+    (void) context;
+
     uint8_t sub_id = *stream.read_u8();
 
-    out << "Type: " << get_id_data_type(sub_id) << std::endl;
+    std::cout << "Type: " << get_id_data_type(sub_id) << std::endl;
 
     IdDataSubId data_id = static_cast<IdDataSubId>(sub_id);
     if (data_id == IdDataSubId::ID_PING)
     {
-        print_id_ping(stream, out);
+        print_id_ping(context, stream);
         stream.read_u8();
     }
     else if (data_id == IdDataSubId::ID_PING_BACK)
     {
-        print_id_ping_back(stream, out);
+        print_id_ping_back(context, stream);
+        stream.read_u8();
+    }
+    else if (data_id == IdDataSubId::ID_EVENT)
+    {
+        print_id_event(context, stream);
         stream.read_u8();
     }
     else
     {
-        out << "Data: " << std::endl;
+        std::cout << "Data: " << std::endl;
         while (auto out_byte = stream.read_u8())
         {
-            out << std::setw(2) << std::hex << std::setfill('0') << (uint32_t) *out_byte << " ";
+            std::cout << std::setw(2) << std::hex << std::setfill('0') << (uint32_t) *out_byte << " ";
         }
     }
 }
 
-static inline std::string print_packet(NetworkStream& stream)
+static inline void handle_packet(NetworkContext& context, NetworkStream& stream)
 {
-    std::stringstream out;
-
     uint8_t id = *stream.read_u8();
-    out << "Id: " << get_packet_type(id) << std::endl;
+    std::cout << "Id: " << get_packet_type(id) << std::endl;
 
     PacketId packet_id = static_cast<PacketId>(id);
     if (packet_id == PacketId::ID_DATA)
     {
-        print_id_data(stream, out);
+        print_id_data(context, stream);
     }
-
-    out << std::endl;
-
-    return out.str();
 }

@@ -8,6 +8,7 @@
 
 CRITICAL_SECTION g_receiveLock;
 StudioDumper::VFTable g_vftable;
+NetworkContext g_context;
 
 void hook_25(RakNet::RakPeer* rakPeer, char _1)
 {
@@ -19,7 +20,7 @@ void hook_25(RakNet::RakPeer* rakPeer, char _1)
         auto stream = NetworkStream(packet->data, packet->size);
 
         while (!stream.is_empty()) {
-            std::cout << print_packet(stream) << std::endl << std::endl;
+            handle_packet(g_context, stream);
         }
     }
 

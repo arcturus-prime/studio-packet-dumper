@@ -254,6 +254,33 @@ struct NetworkStream
         return d;
     }
 
+    inline std::optional<uint64_t> read_varuint64()
+    {
+        auto byte = read_u8();
+
+        if (!byte)
+            return std::nullopt;
+
+        uint64_t result = 0;
+        uint32_t shift = 0;
+
+        while (true) {
+            result |= (*byte & 0x7F) << shift;
+            shift += 7;
+
+            if ((*byte & 0x80) == 0) {
+                break;
+            }
+
+            byte = read_u8();
+
+            if (!byte)
+                return std::nullopt;
+        }
+
+        return result;
+    }
+
     inline void align_to_byte()
     {
         size_t remainder = bit_cursor % 8;
