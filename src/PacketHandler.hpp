@@ -1,6 +1,7 @@
 #include "NetworkStream.hpp"
 #include "NetworkContext.hpp"
 
+#include <zstd.h>
 #include <cstdint>
 #include <iomanip>
 #include <iostream>
@@ -157,13 +158,13 @@ static inline std::string get_id_data_type(uint8_t type)
     }
 }
 
-static inline void print_id_ping(NetworkContext& context, NetworkStream& stream)
+static inline void handle_id_ping(NetworkContext& context, NetworkStream& stream)
 {
     (void) context;
 
-    uint8_t version = *stream.read_u8();
+    auto version = *stream.read_u8();
 
-    uint64_t timestamp = 0;
+    auto timestamp = 0;
     if (version <= 1)
     {
         timestamp = *stream.read_u64_be();
@@ -183,8 +184,8 @@ static inline void print_id_ping(NetworkContext& context, NetworkStream& stream)
         std::cout << "Invalid version" << std::endl;
     }
 
-    uint32_t sendStats = *stream.read_u32_be();
-    uint32_t extraStats = *stream.read_u32_be();
+    auto sendStats = *stream.read_u32_be();
+    auto extraStats = *stream.read_u32_be();
 
     if ((timestamp & 0x20) != 0)
     {
@@ -195,17 +196,17 @@ static inline void print_id_ping(NetworkContext& context, NetworkStream& stream)
     std::cout << "Extra Stats: " << std::hex << std::setfill('0') << extraStats << std::endl;
 }
 
-static inline void print_id_ping_back(NetworkContext& context, NetworkStream& stream)
+static inline void handle_id_ping_back(NetworkContext& context, NetworkStream& stream)
 {
     (void) context;
 
     std::cout << "IsPingBack: " << *stream.read_bool_byte() << std::endl;
 
-    uint64_t timestamp = *stream.read_u64_be();
+    auto timestamp = *stream.read_u64_be();
     std::cout << "Timestamp: " << timestamp << std::endl;
 
-    uint32_t sendStats = *stream.read_u32_be();
-    uint32_t extraStats = *stream.read_u32_be();
+    auto sendStats = *stream.read_u32_be();
+    auto extraStats = *stream.read_u32_be();
 
     if ((timestamp & 0x20) != 0)
     {
@@ -216,11 +217,11 @@ static inline void print_id_ping_back(NetworkContext& context, NetworkStream& st
     std::cout << "Extra Stats: " << std::hex << std::setfill('0') << extraStats << std::endl;
 }
 
-static inline void print_id_event(NetworkContext& context, NetworkStream& stream)
+static inline void handle_id_event(NetworkContext& context, NetworkStream& stream)
 {
     (void) context;
 
-    uint64_t peerId = *stream.read_varuint64();
+    auto peerId = *stream.read_varuint<uint64_t>();
 
     std::cout << "Peer ID: 0x" << std::hex << (uint32_t) peerId << std::endl;
     if (peerId == 0) {
@@ -234,28 +235,28 @@ static inline void print_id_event(NetworkContext& context, NetworkStream& stream
     std::cout << "Event ID: " << std::hex << *stream.read_u16_be() << std::endl;
 }
 
-static inline void print_id_data(NetworkContext& context, NetworkStream& stream)
+static inline void handle_id_data(NetworkContext& context, NetworkStream& stream)
 {
     (void) context;
 
-    uint8_t sub_id = *stream.read_u8();
+    auto sub_id = *stream.read_u8();
 
     std::cout << "Type: " << get_id_data_type(sub_id) << std::endl;
 
-    IdDataSubId data_id = static_cast<IdDataSubId>(sub_id);
+    auto data_id = static_cast<IdDataSubId>(sub_id);
     if (data_id == IdDataSubId::ID_PING)
     {
-        print_id_ping(context, stream);
+        handle_id_ping(context, stream);
         stream.read_u8();
     }
     else if (data_id == IdDataSubId::ID_PING_BACK)
     {
-        print_id_ping_back(context, stream);
+        handle_id_ping_back(context, stream);
         stream.read_u8();
     }
     else if (data_id == IdDataSubId::ID_EVENT)
     {
-        print_id_event(context, stream);
+        handle_id_event(context, stream);
         stream.read_u8();
     }
     else
@@ -268,6 +269,38 @@ static inline void print_id_data(NetworkContext& context, NetworkStream& stream)
     }
 }
 
+static inline void handle_id_new_schema(NetworkContext& context, NetworkStream& stream)
+{
+    context.schema.clear();
+
+    auto data_size = *stream.read_u32_be();
+    stream.read_u32_be();
+
+    auto compressed_data = *stream.read_bytes(data_size);
+    auto uncompressed_size = ZSTD_getFrameContentSize(compressed_data.data(), compressed_data.size());
+
+    std::vector<uint8_t> uncompressed_data(uncompressed_size, 0);
+
+    ZSTD_decompress(uncompressed_data.data(), uncompressed_data.size(), compressed_data.data(), compressed_data.size());
+    NetworkStream substream(uncompressed_data.data(), uncompressed_data.size());
+
+    auto enum_array_size = *substream.read_varuint<uint32_t>();
+    for (size_t i = 0; i < enum_array_size; i++) {
+        auto string_length = *substream.read_varuint<uint32_t>();
+        auto string = *substream.read_string(string_length);
+        auto bit_size = *substream.read_u8();
+        auto network_id = static_cast<uint32_t>(i);
+
+        context.schema.enums.push_back(NetworkSchemaEnum(string, bit_size, network_id));
+    }
+
+    auto class_array_length = *substream.read_varuint<uint32_t>();
+    auto property_array_length = *substream.read_varuint<uint32_t>();
+    auto event_array_length = *substream.read_varuint<uint32_t>();
+
+
+}
+
 static inline void handle_packet(NetworkContext& context, NetworkStream& stream)
 {
     uint8_t id = *stream.read_u8();
@@ -276,6 +309,9 @@ static inline void handle_packet(NetworkContext& context, NetworkStream& stream)
     PacketId packet_id = static_cast<PacketId>(id);
     if (packet_id == PacketId::ID_DATA)
     {
-        print_id_data(context, stream);
+        handle_id_data(context, stream);
+    } else if (packet_id == PacketId::ID_NEW_SCHEMA)
+    {
+        handle_id_new_schema(context, stream);
     }
 }

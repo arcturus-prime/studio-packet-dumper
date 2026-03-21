@@ -1,6 +1,8 @@
 #include <cstddef>
 #include <cstdint>
 #include <optional>
+#include <string>
+#include <vector>
 
 struct NetworkStream
 {
@@ -254,14 +256,15 @@ struct NetworkStream
         return d;
     }
 
-    inline std::optional<uint64_t> read_varuint64()
+    template <typename T>
+    inline std::optional<T> read_varuint()
     {
         auto byte = read_u8();
 
         if (!byte)
             return std::nullopt;
 
-        uint64_t result = 0;
+        T result = 0;
         uint32_t shift = 0;
 
         while (true) {
@@ -300,5 +303,37 @@ struct NetworkStream
         bit_cursor += count;
 
         return true;
+    }
+
+    inline std::optional<std::vector<uint8_t>> read_bytes(size_t count)
+    {
+        if (bits_remaining() < count * 8)
+        {
+            return std::nullopt;
+        }
+
+        std::vector<uint8_t> result(count);
+
+        for (size_t i = 0; i < count; ++i)
+        {
+            auto byte = read_u8();
+
+            if (!byte)
+                return std::nullopt;
+
+            result[i] = *byte;
+        }
+
+        return result;
+    }
+
+    inline std::optional<std::string> read_string(size_t count)
+    {
+        auto bytes = read_bytes(count);
+
+        if (!bytes)
+            return std::nullopt;
+
+        return std::string(bytes->begin(), bytes->end());
     }
 };
